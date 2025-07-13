@@ -54,3 +54,61 @@ global_max = [0]
 dfs(1, -1, [], tree, A)
 
 print(global_max[0])
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+import sys
+sys.setrecursionlimit(1_000_000)
+from collections import defaultdict
+
+def input():
+    return sys.stdin.readline()
+
+def max_quad_sum_optimized(path):
+    n = len(path)
+    max_sum = 0
+
+    # Loop j in the middle
+    for j in range(1, n - 2):
+        for i in range(j):
+            if path[i] >= path[j]:
+                continue
+            for k in range(j + 1, n - 1):
+                if path[j] >= path[k]:
+                    continue
+                for l in range(k + 1, n):
+                    if path[k] >= path[l]:
+                        continue
+                    max_sum = max(max_sum, path[i] + path[j] + path[k] + path[l])
+
+    return max_sum
+
+
+def dfs(node, parent, path, tree, A):
+    path.append(A[node])
+    is_leaf = True
+    for neighbor in tree[node]:
+        if neighbor != parent:
+            is_leaf = False
+            dfs(neighbor, node, path, tree, A)
+    if is_leaf:
+        global_max[0] = max(global_max[0], max_quad_sum_optimized(path))
+    path.pop()
+
+# Read input
+n = int(sys.stdin.readline())
+A = [0] + list(map(int, sys.stdin.readline().split()))  # 1-based
+
+tree = defaultdict(list)
+for _ in range(n - 1):
+    u, v = map(int, sys.stdin.readline().split())
+    tree[u].append(v)
+    tree[v].append(u)
+
+global_max = [0]
+dfs(1, -1, [], tree, A)
+print(global_max[0])
+
