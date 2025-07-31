@@ -1,429 +1,162 @@
-#include <iostream>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <set>
-#include <map>
-#include <cmath>
-#include <ctime>
-#include <functional>
-#include <sstream>
-#include <fstream>
-#include <valarray>
-#include <complex>
-#include <queue>
-#include <cassert>
-#include <bitset>
+#include <bits/stdc++.h>
+
 using namespace std;
 
-#ifdef LOCAL
-#define debug_flag 0
-#else
-#define debug_flag 0
-#endif
+#define GODSPEED           \
+  ios::sync_with_stdio(0); \
+  cin.tie(0);              \
+  cout.tie(0);             \
+  cout << fixed;           \
+  cout << setprecision(12);
+#define f first
+#define s second
+#define pb push_back
+#define mset(a, x) memset(a, x, sizeof(a))
+#define deb1(a) cout << a << "\n";
+#define all(a) a.begin(), a.end()
 
-	template <class T1, class T2 >
-std::ostream& operator << (std::ostream& os, const pair<T1, T2> &p) 
+typedef long long ll;
+const ll N = 5e5 + 5;
+
+ll n, m, q, d[N], l[N], p[N], sz[N], ap[N], tin[N], tout[N], t = 0, w[N];
+vector<pair<ll, ll>> adj[N], comp[N];
+
+void make(ll n)
 {
-	os << "[" << p.first << ", " << p.second << "]";
-	return os;
+  for (int i = 1; i <= n; i++)
+  {
+    p[i] = i;
+    sz[i] = 1;
+  }
 }
 
-	template <class T >
-std::ostream& operator << (std::ostream& os, const std::vector<T>& v) 
+int find(ll x)
 {
-	os << "[";
-	bool first = true;
-	for (typename std::vector<T>::const_iterator it = v.begin(); it != v.end(); ++it)
-	{
-		if (!first)
-			os << ", ";
-		first = false;
-		os << *it;
-	}
-	os << "]";
-	return os;
+  return (p[x] == x) ? x : p[x] = find(p[x]);
 }
 
-#define dbg(args...) { if (debug_flag) { _print(_split(#args, ',').begin(), args); cerr << endl; } else { void(0);} }
-
-vector<string> _split(const string& s, char c) {
-	vector<string> v;
-	stringstream ss(s);
-	string x;
-	while (getline(ss, x, c))
-		v.emplace_back(x);
-	return v;
-}
-
-void _print(vector<string>::iterator) {}
-template<typename T, typename... Args>
-void _print(vector<string>::iterator it, T a, Args... args) {
-	string name = it -> substr((*it)[0] == ' ', it -> length());
-	if (isalpha(name[0]))
-		cerr << name  << " = " << a << " ";
-	else
-		cerr << name << " ";
-	_print(++it, args...);
-}
-
-typedef long long int int64;
-
-const int N = (int)4e5 + 1000;
-const int LOGN = 20;
-
-int n, m, q;
-vector<int> graph[N];
-vector<pair<int, int> > black_edges;
-
-int white_comp_cnt;
-int v_to_white_comp[N];
-
-int timer;
-int t_in[N], t_out[N];
-int f_up[N];
-bool is_articulation_point[N];
-
-int block_cnt;
-int block_id[N];
-vector<int> cur_block;
-
-vector<int> block_graph[N];
-int par[N][LOGN];
-
-bool used[N];
-
-int black_color[N];
-
-vector<vector<int> > blocks;
-
-void dfs_comp(int v)
+void merge(ll x, ll y)
 {
-	v_to_white_comp[v] = white_comp_cnt;
-	for (int to : graph[v])
-		if (v_to_white_comp[to] == -1)
-			dfs_comp(to);
+  ll a = find(x);
+  ll b = find(y);
+  if (a != b)
+  {
+    if (sz[a] >= sz[b])
+      swap(a, b);
+    p[a] = b;
+    sz[b] += sz[a];
+  }
 }
 
-void proccess_block(int limit_size)
+void dfs(int x, int i, int ww)
 {
-	vector<int> cur_comp;
-	while ((int)cur_block.size() > limit_size)
-	{
-		cur_comp.push_back(cur_block.back());
-		cur_block.pop_back();
-	}
-
-	blocks.push_back(cur_comp);
-}
-
-void init_dfs(int v, int p, int cur_black_color)
-{
-	//dbg(v, p);
-
-	black_color[v] = cur_black_color;
-
-	cur_block.push_back(v);
-
-	t_in[v] = f_up[v] = timer++;
-
-	used[v] = true;
-
-	int to_cnt = 0;
-
-	for (int to : graph[v])
-	{
-		if (to == p)
-			continue;
-
-		if (used[to])
-		{
-			f_up[v] = min(f_up[v], t_in[to]);
-		}
-		else
-		{
-			int limit_size = (int)cur_block.size();
-
-			to_cnt++;
-			init_dfs(to, v, cur_black_color);
-
-			if (f_up[to] >= t_in[v])
-			{
-				if (p != -1 || (p == -1 && to_cnt > 1))
-				{
-					proccess_block(limit_size);
-					blocks.back().push_back(v);
-				}
-
-				if (p != -1)
-					is_articulation_point[v] = true;
-			}
-
-			f_up[v] = min(f_up[v], f_up[to]);
-		}
-	}
-
-	if (p == -1)
-		is_articulation_point[v] = (to_cnt > 1);
-}
-
-bool is_par(int p, int v)
-{
-	return t_in[p] <= t_in[v] && t_out[v] <= t_out[p];
-}
-
-int get_lca(int a, int b)
-{
-	if (is_par(a, b))
-		return a;
-
-	if (is_par(b, a))
-		return b;
-
-	for (int i = LOGN - 1; i >= 0; i--)
-	{
-		int new_a = par[a][i];
-		if (new_a == -1 || is_par(new_a, b))
-			continue;
-		a = new_a;
-	}
-
-	return par[a][0];
-}
-
-void block_dfs(int v, int p)
-{
-	t_in[v] = timer++;
-
-	used[v] = true;
-
-	par[v][0] = p;
-	for (int i = 1; i < LOGN; i++)
-	{
-		if (par[v][i - 1] == -1)
-			break;
-		par[v][i] = par[par[v][i - 1]][i - 1];
-	}
-
-	for (int to : block_graph[v])
-	{
-		if (used[to])
-			continue;
-		block_dfs(to, v);
-	}
-
-	t_out[v] = timer++;
-}
-
-void init_graph()
-{
-	fill(v_to_white_comp, v_to_white_comp + n, -1);
-	for (int i = 0; i < n; i++)
-	{
-		if (v_to_white_comp[i] != -1)
-			continue;
-		dfs_comp(i);
-		white_comp_cnt++;
-	}
-
-	//for (int i = 0; i < n; i++)
-	//dbg(i, v_to_white_comp[i]);
-
-	for (int i = 0; i < n; i++)
-		graph[i].clear();
-
-	for (auto p : black_edges)
-	{
-		int a = p.first;
-		int b = p.second;
-
-		a = v_to_white_comp[a];
-		b = v_to_white_comp[b];
-
-		if (a != b)
-		{
-			//dbg("black", a, b);
-			graph[a].push_back(b);
-			graph[b].push_back(a);
-		}
-	}
-
-	fill(used, used + white_comp_cnt, false);
-
-	int black_cnt = 0;
-
-	fill(block_id, block_id + n, -1);
-
-	for (int i = 0; i < white_comp_cnt; i++)
-	{
-		if (used[i])
-			continue;
-
-		init_dfs(i, -1, black_cnt);
-		black_cnt++;
-
-		proccess_block(0);
-	}
-
-	dbg(blocks);
-
-	for (int i = 0; i < white_comp_cnt; i++)
-		dbg(i, is_articulation_point[i]);
-
-	block_cnt = (int)blocks.size() + white_comp_cnt;
-
-	dbg(block_cnt);
-
-	for (int i = 0; i < (int)blocks.size(); i++)
-	{
-		for (int v : blocks[i])
-		{
-			block_id[v] = i;
-
-			if (is_articulation_point[v])
-			{
-				int a = i;
-				int b = v + (int)blocks.size();
-
-				dbg("block edge", a, b);
-
-				block_graph[a].push_back(b);
-				block_graph[b].push_back(a);
-			}
-		}
-	}
-
-	fill(used, used + block_cnt, false);
-
-	for (int i = 0; i < block_cnt; i++)
-		for (int j = 0; j < LOGN; j++)
-			par[i][j] = -1;
-
-	for (int i = 0; i < block_cnt; i++)
-	{
-		if (used[i])
-			continue;
-
-		block_dfs(i, -1);
-	}
-
-	//for (int i = 0; i < white_comp_cnt; i++)
-	//dbg(i, is_articulation_point[i]);
-}
-
-bool on_path(int v, int a, int b)
-{
-	return is_par(b, v) && is_par(v, a);
+  w[x] = ww;
+  tin[x] = t++;
+  int f = 1, ct = 0;
+  for (auto [v, ind] : adj[x])
+  {
+    if (ind == i)
+      continue;
+    if (d[v] != -1)
+    {
+      l[x] = min(l[x], d[v]);
+    }
+    else
+    {
+      d[v] = l[v] = d[x] + 1;
+      dfs(v, ind, ww);
+      if (l[v] >= d[x])
+      {
+        f = 0;
+        comp[x].pb({tin[v], tout[v]});
+      }
+      l[x] = min(l[x], l[v]);
+    }
+  }
+  if (x == 1 && ct > 1)
+    ap[x] = 1;
+  else if (x != 1 && f == 0)
+    ap[x] = 1;
+  tout[x] = t++;
 }
 
 bool check(int a, int b, int c)
 {
-	dbg("check", a, b, c);
-	//a != b holds
-
-	if (c == a || c == b)
-		return false;
-
-	if (!is_articulation_point[c])
-		return true;
-
-	if (is_articulation_point[a])
-		a = (int)blocks.size() + a;
-	else
-		a = block_id[a];
-
-	if (is_articulation_point[b])
-		b = (int)blocks.size() + b;
-	else
-		b = block_id[b];
-
-	c = (int)blocks.size() + c;
-
-	int lca = get_lca(a, b);
-
-	dbg(a, b, c, lca);
-
-	if (on_path(c, a, lca) || on_path(c, b, lca))
-		return false;
-
-	return true;
-}
-
-bool solve(int a, int b, int c, int d)
-{
-	a = v_to_white_comp[a];
-	b = v_to_white_comp[b];
-	c = v_to_white_comp[c];
-	d = v_to_white_comp[d];
-
-	//dbg(a, b, c, d);
-
-	if (black_color[a] != black_color[b])
-		return false;
-
-	if (black_color[c] != black_color[d])
-		return true;
-
-	if (c == d)
-		return false;
-
-	if (a == b)
-		return true;
-
-	if (check(a, b, c))
-		return true;
-
-	if (check(a, b, d))
-		return true;
-
-	return false;
+  if (ap[c] == 0)
+    return 1;
+  auto inda = upper_bound(all(comp[c]), make_pair(tin[a], t + 1)) - comp[c].begin() - 1;
+  auto indb = upper_bound(all(comp[c]), make_pair(tin[b], t + 1)) - comp[c].begin() - 1;
+  if (inda != -1 && (tin[a] < comp[c][inda].f || tout[a] > comp[c][inda].s))
+    inda = -1;
+  if (indb != -1 && (tin[b] < comp[c][indb].f || tout[b] > comp[c][indb].s))
+    indb = -1;
+  return inda == indb;
 }
 
 int main()
 {
-#ifdef LOCAL
-	freopen ("input.txt", "r", stdin);
-#endif
-
-	scanf("%d%d%d", &n, &m, &q);
-
-	for (int i = 0; i < m; i++)
-	{
-		int a, b, t;
-		scanf("%d%d%d", &a, &b, &t);
-		a--;
-		b--;
-
-		dbg(a, b, t);
-
-		if (t == 0)
-			black_edges.emplace_back(a, b);
-		else
-		{
-			graph[a].push_back(b);
-			graph[b].push_back(a);
-		}
-	}
-
-	init_graph();
-
-	for (int i = 0; i < q; i++)
-	{
-		int a, b, c, d;
-		scanf("%d%d%d%d", &a, &b, &c, &d);
-		a--;
-		b--;
-		c--;
-		d--;
-
-		dbg(a, b, c, d);
-
-		bool res = solve(a, b, c, d);
-		printf("%s\n", res ? "Yes" : "No");
-	}
-
-	return 0;
+  GODSPEED;
+  cin >> n >> m >> q;
+  make(n + 1);
+  for (int i = 1; i <= m; i++)
+  {
+    int u, v, w;
+    cin >> u >> v >> w;
+    if (w == 0)
+    {
+      adj[u].pb({v, i});
+      adj[v].pb({u, i});
+    }
+    else
+    {
+      merge(u, v);
+    }
+  }
+  for (int i = 1; i <= n; i++)
+  {
+    for (auto &[x, v] : adj[i])
+      x = find(x);
+    if (find(i) != i)
+    {
+      for (auto it : adj[i])
+        adj[find(i)].pb(it);
+    }
+  }
+  mset(d, -1);
+  for (int i = 1; i <= n; i++)
+  {
+    if (find(i) == i)
+    {
+      if (d[i] == -1)
+      {
+        d[i] = l[i] = 0;
+        dfs(i, 0, i);
+      }
+    }
+  }
+  for (int i = 1; i <= n; i++)
+  {
+    sort(all(comp[i]));
+  }
+  for (int i = 1; i <= q; i++)
+  {
+    int a, b, c, d;
+    cin >> a >> b >> c >> d;
+    if (find(c) == find(d) || w[find(a)] != w[find(b)])
+    {
+      deb1("No")
+    }
+    else if (find(d) != find(a) && find(d) != find(b) && check(find(a), find(b), find(d)))
+    {
+      deb1("Yes")
+    }
+    else if (find(c) != find(a) && find(c) != find(b) && check(find(a), find(b), find(c)))
+    {
+      deb1("Yes")
+    }
+    else
+    {
+      deb1("No")
+    }
+  }
 }
