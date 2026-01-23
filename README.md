@@ -5,7 +5,7 @@ Welcome to my HackerEarth Practice Repository! 🚀
 This repo contains solutions to various HackerEarth problems implemented in Java, C++, and Python, organized by topic and difficulty. All code is structured for easy understanding, ideal for learners and competitive programmers alike.
 
 👤 My HackerEarth Profile
-📎https://www.hackerearth.com/@atrevidomiwakuteki/
+📎https://www.hackerearth.com/@indefatigable/
 
 📌 Why this repo?
 ✅ Solutions in Java, C++, and Python
